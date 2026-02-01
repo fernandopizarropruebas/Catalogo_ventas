@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://api.maybel.cu/v1';
+export const API_BASE_URL = 'http://localhost:8000';
 export const IMAGE_BASE_URL = 'https://api.maybel.cu'; // Assuming images are served relative to domain
 
 export const CONTACT_INFO = {
