@@ -8,6 +8,30 @@ import PriceDisplay from '@/components/catalog/PriceDisplay';
 import VariantTable from '@/components/catalog/VariantTable';
 import { Skeleton } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
+import type { Product } from '@/types';
+
+/**
+ * Compute stock per variant from lots data.
+ * The product endpoint returns variants WITHOUT stock_summary,
+ * but lots[].variant_stocks[] contains current_quantity per variant.
+ * We sum current_quantity across all lots for each variant_id.
+ */
+function computeVariantStock(product: Product): Map<string, number> {
+    const stockMap = new Map<string, number>();
+
+    if (product.lots) {
+        for (const lot of product.lots) {
+            if (lot.variant_stocks) {
+                for (const vs of lot.variant_stocks) {
+                    const current = stockMap.get(vs.variant_id) ?? 0;
+                    stockMap.set(vs.variant_id, current + vs.current_quantity);
+                }
+            }
+        }
+    }
+
+    return stockMap;
+}
 
 export default function ProductPage() {
     const { id } = useParams<{ id: string }>();
@@ -47,11 +71,9 @@ export default function ProductPage() {
     const currentImage = sortedImages[selectedImageIndex];
     const currentImageUrl = getImageUrl(currentImage?.file_path || null);
 
-    // Overall stock check
-    const totalAvailable = product.variants?.reduce(
-        (sum, v) => sum + (v.stock_summary?.available_quantity ?? 0),
-        0
-    ) ?? 0;
+    // Compute stock per variant from lots data
+    const stockByVariant = computeVariantStock(product);
+    const totalAvailable = Array.from(stockByVariant.values()).reduce((sum, qty) => sum + qty, 0);
     const inStock = totalAvailable > 0;
 
     // Breadcrumb
@@ -120,7 +142,7 @@ export default function ProductPage() {
 
                     <h1 className="product-detail-name">{product.name}</h1>
 
-                    {/* Stock indicator */}
+                    {/* Total quantity indicator */}
                     <div>
                         <span className={`stock-badge ${inStock ? 'stock-badge-available' : 'stock-badge-unavailable'}`}>
                             <span className="stock-badge-dot" />
@@ -136,9 +158,9 @@ export default function ProductPage() {
                         <p className="product-detail-description">{product.description}</p>
                     )}
 
-                    {/* Variants */}
+                    {/* Variants with computed stock from lots */}
                     {product.variants && product.variants.length > 0 && (
-                        <VariantTable variants={product.variants} />
+                        <VariantTable variants={product.variants} stockByVariant={stockByVariant} />
                     )}
                 </div>
             </div>

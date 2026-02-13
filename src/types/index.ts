@@ -87,22 +87,31 @@ export interface ProductImage {
 }
 
 // ============================================
-// Lot (for detail view)
+// Lot (from product detail response)
 // ============================================
 
 export interface Lot {
     id: string;
-    lot_number: string;
+    product_id: string;
+    lot_date: string;
+    purchase_price_usd: number;
+    purchase_price_cup: number;
     status: string;
+    notes?: string;
+    created_at: string;
+    created_by: string;
     variant_stocks?: VariantStock[];
 }
 
 export interface VariantStock {
     id: string;
+    lot_id: string;
     variant_id: string;
-    quantity: number;
-    reserved: number;
-    available: number;
+    variant?: Variant;
+    initial_quantity: number;
+    current_quantity: number;
+    created_at: string;
+    updated_at: string;
 }
 
 // ============================================
